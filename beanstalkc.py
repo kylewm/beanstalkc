@@ -39,7 +39,7 @@ class SocketError(BeanstalkcException):
     def wrap(wrapped_function, *args, **kwargs):
         try:
             return wrapped_function(*args, **kwargs)
-        except socket.error, err:
+        except socket.error as err:
             raise SocketError(err)
 
 
@@ -69,7 +69,7 @@ class Connection(object):
     def close(self):
         """Close connection to server."""
         try:
-            self._socket.sendall('quit\r\n')
+            self._socket.sendall(b'quit\r\n')
         except socket.error:
             pass
         try:
@@ -83,7 +83,7 @@ class Connection(object):
         self.connect()
 
     def _interact(self, command, expected_ok, expected_err=[]):
-        SocketError.wrap(self._socket.sendall, command)
+        SocketError.wrap(self._socket.sendall, bytes(command, 'UTF-8'))
         status, results = self._read_response()
         if status in expected_ok:
             return results
@@ -96,7 +96,7 @@ class Connection(object):
         line = SocketError.wrap(self._socket_file.readline)
         if not line:
             raise SocketError()
-        response = line.split()
+        response = str(line, 'UTF-8').split()
         return response[0], response[1:]
 
     def _read_body(self, size):
@@ -104,7 +104,7 @@ class Connection(object):
         SocketError.wrap(self._socket_file.read, 2)  # trailing crlf
         if size > 0 and not body:
             raise SocketError()
-        return body
+        return str(body, 'UTF-8')
 
     def _interact_value(self, command, expected_ok, expected_err=[]):
         return self._interact(command, expected_ok, expected_err)[0]
@@ -122,7 +122,8 @@ class Connection(object):
     def _interact_peek(self, command):
         try:
             return self._interact_job(command, ['FOUND'], ['NOT_FOUND'], False)
-        except CommandFailed, (_, _status, _results):
+        except CommandFailed as xxx_todo_changeme:
+            (_, _status, _results) = xxx_todo_changeme.args
             return None
 
     # -- public interface --
@@ -147,7 +148,8 @@ class Connection(object):
             return self._interact_job(command,
                                       ['RESERVED'],
                                       ['DEADLINE_SOON', 'TIMED_OUT'])
-        except CommandFailed, (_, status, results):
+        except CommandFailed as xxx_todo_changeme1:
+            (_, status, results) = xxx_todo_changeme1.args
             if status == 'TIMED_OUT':
                 return None
             elif status == 'DEADLINE_SOON':
